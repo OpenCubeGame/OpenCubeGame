@@ -1,25 +1,14 @@
 
 use ocg_schemas::voxel::chunk_storage::{PaletteStorage, ChunkStorage};
 use ocg_schemas::coordinates::{InChunkRange, InChunkPos, AbsBlockPos, CHUNK_DIM};
-use noise::{
-    Fbm,
-    Simplex, 
-};
-use noise::utils::{NoiseMapBuilder, PlaneMapBuilder};
+use noise::{NoiseFn, Perlin};
 use std::collections::HashMap;
+use std::ops::{Add, Sub, Mul, Div};
 
+const MOUNTAIN_START_GLOBAL: i32 = 48;
 
 pub fn generate(count_x: i32, count_y: i32, count_z: i32) -> HashMap<AbsBlockPos, PaletteStorage<u64>> {
-    let fbm = Fbm::<Simplex>::new(0);
-    let simplex = Simplex::new(0);
-
-    let count_y_f = (count_y * CHUNK_DIM) as f64;
-
-    let noise_map = PlaneMapBuilder::<_, 2>::new(fbm)
-        .set_size((count_x * CHUNK_DIM * 10) as usize, (count_z * CHUNK_DIM * 10) as usize)
-        .set_x_bounds(0.0, count_y_f)
-        .set_y_bounds(0.0, count_y_f)
-        .build();
+    let simplex = Perlin::new(0);
 
     let mut chunks: HashMap<AbsBlockPos, PaletteStorage<u64>> = HashMap::new();
 
@@ -31,10 +20,35 @@ pub fn generate(count_x: i32, count_y: i32, count_z: i32) -> HashMap<AbsBlockPos
             
                     chunk.fill(InChunkRange::WHOLE_CHUNK, 0);
             
-                    for x in 0..CHUNK_DIM - 1 {
-                        for z in 0..CHUNK_DIM - 1 {
-                            for y in 0..(noise_map.get_value((x + chunk_x * CHUNK_DIM) as usize, (z + chunk_z * CHUNK_DIM) as usize) as i32 * CHUNK_DIM - (chunk_y * CHUNK_DIM)) {
-                                chunk.put(InChunkPos::try_new(x, y, z).unwrap(), 1);
+                    let chunk_y_pos = chunk_y * CHUNK_DIM;
+
+                    // 0 == air
+                    // 1 == stone
+                    // 2 == grass
+                    // 3 == dirt
+                    // 4 == snow
+                    for x in 0..CHUNK_DIM {
+                        for z in 0..CHUNK_DIM {
+                            let point: [f64; 2] = [(x as f64 / CHUNK_DIM as f64) + chunk_x as f64, (z as f64 / CHUNK_DIM as f64) + chunk_z as f64];
+                            let mut value: f64 = map_range((-1.0, 1.0), (0.0, (count_y * CHUNK_DIM) as f64), simplex.get(point));
+                            value -= chunk_y_pos as f64;
+                            let mut y = 0;
+                            while value > 0.0 && y < CHUNK_DIM {
+                                let pos = InChunkPos::try_new(x, y, z).unwrap();
+                                let global_y = y + chunk_y_pos;
+                                if global_y > (value - 1.0) as i32 && global_y <= (value + 1.0) as i32 {
+                                    if global_y >= MOUNTAIN_START_GLOBAL {
+                                        chunk.put(pos, 4); // snow
+                                    } else {
+                                        chunk.put(pos, 2); // grass
+                                    }
+                                } else if global_y < (value - 5.0) as i32 {
+                                    chunk.put(pos, 1); // stone
+                                } else if global_y <= value as i32 {
+                                    chunk.put(pos, 3); // dirt
+                                }
+                                value -= 1.0;
+                                y += 1;
                             }
                         }
                     }
@@ -44,7 +58,23 @@ pub fn generate(count_x: i32, count_y: i32, count_z: i32) -> HashMap<AbsBlockPos
         }
     }
 
-    noise_map.write_to_file("noise_map.png");
-
     return chunks;
+}
+
+fn clamp<T: Copy + PartialOrd>(num: T, min: T, max: T) -> T {
+    if num > max {
+        return max;
+    } else if num < min {
+        return min;
+    }
+    return num;
+}
+
+fn map_range<T: Copy>(from_range: (T, T), to_range: (T, T), s: T) -> T 
+    where T: Add<T, Output=T> +
+             Sub<T, Output=T> +
+             Mul<T, Output=T> +
+             Div<T, Output=T>
+{
+    to_range.0 + (s - from_range.0) * (to_range.1 - to_range.0) / (from_range.1 - from_range.0)
 }

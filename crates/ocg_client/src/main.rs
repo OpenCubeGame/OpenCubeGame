@@ -68,10 +68,13 @@ fn main() {
 }
 
 mod debug_window {
+    use std::collections::HashMap;
+
     use bevy::log;
     use bevy::prelude::*;
     use bevy::reflect::erased_serde::__private::serde::__private::de;
     use ocg_schemas::coordinates;
+    use ocg_schemas::voxel::chunk_storage::PaletteStorage;
     
     pub struct DebugWindow;
 
@@ -95,6 +98,23 @@ mod debug_window {
             ..default()
         });
 
+        let stone_material = &materials.add(StandardMaterial {
+            base_color: Color::GRAY,
+            ..default()
+        });
+        let grass_material = &materials.add(StandardMaterial {
+            base_color: Color::GREEN,
+            ..default()
+        });
+        let dirt_material = &materials.add(StandardMaterial {
+            base_color: Color::BISQUE,
+            ..default()
+        });
+        let snow_material = &materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            ..default()
+        });
+
         commands.spawn(PbrBundle {
             mesh: meshes.add(shape::Torus::default().into()),
             material: debug_material,
@@ -102,20 +122,22 @@ mod debug_window {
             ..default()
         });
 
-        let chunks = ocg_common::world::generator::generate(4, 1, 4);
-        let pink_material = materials.add(StandardMaterial {
-            base_color: Color::WHITE,
-            ..default()
-        });
+        let chunks: HashMap<coordinates::AbsBlockPos, PaletteStorage<u64>> = ocg_common::world::generator::generate(4, 4, 4);
 
         for chunk in chunks.iter() {
             for block in chunk.1.iter_with_coords() {
-                if block.1.eq(&1) {
+                if block.1 > &0 { // not air
                     let pos = chunk.0;
+                    let mat = match block.1 {
+                        2 => grass_material,
+                        3 => dirt_material,
+                        4 => snow_material,
+                        _ => stone_material,
+                    };
                     commands.spawn(PbrBundle {
                         mesh: meshes.add(shape::Box::new(1.0, 1.0, 1.0).into()),
-                        material: pink_material.clone(),
-                        transform: Transform::from_xyz((block.0.x + (pos.x * coordinates::CHUNK_DIM) - 1) as f32, (block.0.y + (pos.y * coordinates::CHUNK_DIM)) as f32, (block.0.z + (pos.z * coordinates::CHUNK_DIM) - 1) as f32),
+                        material: mat.clone(),
+                        transform: Transform::from_xyz((block.0.x + (pos.x * coordinates::CHUNK_DIM)) as f32, (block.0.y + (pos.y * coordinates::CHUNK_DIM)) as f32, (block.0.z + (pos.z * coordinates::CHUNK_DIM)) as f32),
                         ..default()
                     });
                 }
@@ -124,12 +146,12 @@ mod debug_window {
 
         commands.spawn(PointLightBundle {
             point_light: PointLight {
-                intensity: 9000.0,
-                range: 100.,
-                shadows_enabled: true,
+                intensity: 100000.0,
+                range: 10000.,
+                shadows_enabled: false, // enable after optimizing idk
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 30.0, 20.0),
+            transform: Transform::from_xyz(0.0, 100.0, 128.0),
             ..default()
         });
 

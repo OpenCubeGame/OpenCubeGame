@@ -1,6 +1,6 @@
 //! A collection of strongly typed newtype wrappers for the various coordinate formats within the game's world and related constants.
 
-use std::ops::{Add, Deref};
+use std::{ops::{Add, Deref}, fmt::Display};
 
 use bevy_math::IVec3;
 use bytemuck::{Pod, Zeroable};
@@ -207,6 +207,12 @@ impl Add<InChunkPos> for InChunkPos {
     #[inline]
     fn add(self, rhs: InChunkPos) -> Self::Output {
         RelBlockPos(self.0 + rhs.0)
+    }
+}
+
+impl Display for InChunkPos {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
