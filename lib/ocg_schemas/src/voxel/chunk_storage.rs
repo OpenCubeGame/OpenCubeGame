@@ -40,7 +40,7 @@ pub trait ChunkStorage<DataType: ChunkDataType> {
 
 /// Chunk data compressed by storing a list of used values in a `palette` array and indices into that array for every chunk element.
 /// A special case for all data being of the same type has a very small memory footprint.
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct PaletteStorage<DataType: ChunkDataType> {
     palette: SmallVec<[DataType; 16]>,
     /// Invariant: The length is 1, CHUNK_DIM3Z / 2 (u8 indices) or CHUNK_DIM3Z (u16 indices)

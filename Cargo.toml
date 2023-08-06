@@ -38,6 +38,7 @@ rgb = { version = "0.8.36", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
 smallvec = { version = "1.10.0", features = ["serde", "const_generics", "const_new", "write", "union"] }
 thiserror = "1.0.40"
+noise = { version = "0.8.2", features = ["images"] }
 
 # Remote, testing
 criterion = { version = "0.5.1", features = ["html_reports"] }

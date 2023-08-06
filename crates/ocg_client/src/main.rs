@@ -17,6 +17,8 @@ use bevy::ui::UiPlugin;
 use bevy::window::{ExitCondition, PresentMode};
 use bevy::winit::WinitPlugin;
 
+pub mod cameramove;
+
 fn main() {
     // Unset the manifest dir to make bevy load assets from the workspace root
     std::env::set_var("CARGO_MANIFEST_DIR", "");
@@ -56,17 +58,21 @@ fn main() {
         .add_plugins(AudioPlugin::default())
         .add_plugins(GilrsPlugin)
         .add_plugins(AnimationPlugin)
-        .add_plugins(GltfPlugin::default());
+        .add_plugins(GltfPlugin::default())
+        .add_plugins(cameramove::PlayerPlugin);
 
     app.add_plugins(debug_window::DebugWindow);
 
     app.run();
+
 }
 
 mod debug_window {
     use bevy::log;
     use bevy::prelude::*;
-
+    use bevy::reflect::erased_serde::__private::serde::__private::de;
+    use ocg_schemas::coordinates;
+    
     pub struct DebugWindow;
 
     impl Plugin for DebugWindow {
@@ -83,10 +89,6 @@ mod debug_window {
     ) {
         log::warn!("Setting up debug window");
         let font: Handle<Font> = asset_server.load("fonts/cascadiacode.ttf");
-        commands.spawn(Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
-            ..default()
-        });
 
         let debug_material = materials.add(StandardMaterial {
             base_color: Color::FUCHSIA,
@@ -96,9 +98,29 @@ mod debug_window {
         commands.spawn(PbrBundle {
             mesh: meshes.add(shape::Torus::default().into()),
             material: debug_material,
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, 10.0, 0.0),
             ..default()
         });
+
+        let chunks = ocg_common::world::generator::generate(4, 1, 4);
+        let pink_material = materials.add(StandardMaterial {
+            base_color: Color::WHITE,
+            ..default()
+        });
+
+        for chunk in chunks.iter() {
+            for block in chunk.1.iter_with_coords() {
+                if block.1.eq(&1) {
+                    let pos = chunk.0;
+                    commands.spawn(PbrBundle {
+                        mesh: meshes.add(shape::Box::new(1.0, 1.0, 1.0).into()),
+                        material: pink_material.clone(),
+                        transform: Transform::from_xyz((block.0.x + (pos.x * coordinates::CHUNK_DIM) - 1) as f32, (block.0.y + (pos.y * coordinates::CHUNK_DIM)) as f32, (block.0.z + (pos.z * coordinates::CHUNK_DIM) - 1) as f32),
+                        ..default()
+                    });
+                }
+            }
+        }
 
         commands.spawn(PointLightBundle {
             point_light: PointLight {
@@ -107,7 +129,7 @@ mod debug_window {
                 shadows_enabled: true,
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 16.0, 1.0),
+            transform: Transform::from_xyz(0.0, 30.0, 20.0),
             ..default()
         });
 
