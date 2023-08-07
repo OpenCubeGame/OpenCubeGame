@@ -2755,6 +2755,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lru"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eedb2bdbad7e0634f83989bf596f497b070130daaa398ab22d84c39e266deec5"
+dependencies = [
+ "hashbrown 0.14.0",
+]
+
+[[package]]
 name = "mach2"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3264,8 +3273,12 @@ name = "ocg_common"
 version = "0.0.0"
 dependencies = [
  "bevy",
+ "lru",
  "noise",
  "ocg_schemas",
+ "rand 0.8.5",
+ "rand_xoshiro",
+ "thread_local",
 ]
 
 [[package]]
@@ -3292,6 +3305,7 @@ dependencies = [
  "serde",
  "smallvec",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]
@@ -3677,6 +3691,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77d416b86801d23dde1aa643023b775c3a462efc0ed96443add11546cdf1dca8"
 dependencies = [
  "rand_core 0.5.1",
+]
+
+[[package]]
+name = "rand_xoshiro"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
+dependencies = [
+ "rand_core 0.6.4",
 ]
 
 [[package]]

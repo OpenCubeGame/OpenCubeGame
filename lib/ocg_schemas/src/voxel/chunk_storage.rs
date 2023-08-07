@@ -5,11 +5,13 @@ use std::iter::{Enumerate, Map, Take};
 
 use bitvec::prelude::*;
 use either::Either;
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use itertools::{iproduct, Itertools};
 use smallvec::{smallvec, SmallVec};
+use uuid::Uuid;
 
-use crate::coordinates::*;
+use crate::coordinates::{*, self};
+use crate::entity::entitytypes::EntityId;
 
 /// Marker trait for all the requirements for a type to be stored as per-block chunk data.
 /// Do not derive yourself, the blanked implementation should cover all types that are valid.
@@ -22,6 +24,7 @@ impl<T> ChunkDataType for T where T: Clone + Default + PartialEq + Hash + Debug 
 ///
 /// The game uses various types of storage, ranging from dense array representations, through palette compression to sparse hash-based storage.
 pub trait ChunkStorage<DataType: ChunkDataType> {
+    fn pos(&self) -> AbsChunkPos;
     /// Clone all elements of the chunk into a dense XZY-ordered array (with strides of X=1, Z=32, Y=32²).
     fn copy_dense(&self, output: &mut [DataType; CHUNK_DIM3Z]);
     /// Gets the element at the given coordinates, or [`None`] if there is no chunk data at all.
@@ -42,12 +45,20 @@ pub trait ChunkStorage<DataType: ChunkDataType> {
 /// A special case for all data being of the same type has a very small memory footprint.
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct PaletteStorage<DataType: ChunkDataType> {
+    /// Absolute position of the chunk in the world.
+    pub pos: coordinates::AbsChunkPos,
+
     palette: SmallVec<[DataType; 16]>,
     /// Invariant: The length is 1, CHUNK_DIM3Z / 2 (u8 indices) or CHUNK_DIM3Z (u16 indices)
     data_storage: SmallVec<[u16; 1]>,
     /// Length of [`palette`] at the last palette GC call
     last_gc_palette_len: usize,
 }
+
+//#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+//pub struct DataStorage<DataType: ChunkDataType> {
+//    entities: HashMap<Uuid, DataType>
+//}
 
 /// Simple XZY dense array storage for chunk data (with strides of X=1, Z=32, Y=32²).
 #[derive(Clone, Eq, PartialEq)]
@@ -310,6 +321,7 @@ impl<DataType: ChunkDataType + Copy> PaletteStorage<DataType> {
 impl<DataType: ChunkDataType + Copy> Default for PaletteStorage<DataType> {
     fn default() -> Self {
         Self {
+            pos: AbsChunkPos::default(),
             palette: smallvec![DataType::default()],
             data_storage: smallvec![0],
             last_gc_palette_len: 0,
@@ -317,6 +329,10 @@ impl<DataType: ChunkDataType + Copy> Default for PaletteStorage<DataType> {
     }
 }
 impl<DataType: ChunkDataType + Copy> ChunkStorage<DataType> for PaletteStorage<DataType> {
+    fn pos(&self) -> AbsChunkPos {
+        self.pos
+    }
+
     fn copy_dense(&self, output: &mut [DataType; CHUNK_DIM3Z]) {
         for (input, output) in self.iter().zip_eq(output.iter_mut()) {
             *output = *input;

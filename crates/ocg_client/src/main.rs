@@ -122,7 +122,7 @@ mod debug_window {
             ..default()
         });
 
-        let chunks: HashMap<coordinates::AbsBlockPos, PaletteStorage<u64>> = ocg_common::world::generator::generate(4, 4, 4);
+        let chunks: HashMap<coordinates::AbsChunkPos, PaletteStorage<u64>> = ocg_common::world::generator::generate(4, 2, 4);
 
         for chunk in chunks.iter() {
             for block in chunk.1.iter_with_coords() {

@@ -7,3 +7,4 @@ pub mod physics;
 pub mod registry;
 pub mod schemas;
 pub mod voxel;
+pub mod entity;

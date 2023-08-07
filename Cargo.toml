@@ -33,12 +33,16 @@ hashbrown = { version = "0.14", features = ["serde", "nightly"] }
 itertools = "0.11.0"
 kstring = { version = "2.0.0", features = ["serde"] }
 rand = "0.8.5"
+rand_xoshiro = "0.6.0"
 rand_pcg = "0.3.1"
 rgb = { version = "0.8.36", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
 smallvec = { version = "1.10.0", features = ["serde", "const_generics", "const_new", "write", "union"] }
 thiserror = "1.0.40"
 noise = { version = "0.8.2", features = ["images"] }
+thread_local = "1.1.7"
+lru = "0.11.0"
+uuid = { version = "1.4.1", features = ["v4"] }
 
 # Remote, testing
 criterion = { version = "0.5.1", features = ["html_reports"] }
