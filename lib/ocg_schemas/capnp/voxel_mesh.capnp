@@ -1,3 +1,4 @@
+# Voxel mesh serialization format for resource packs.
 @0xd51eb866f746ae4e;
 
 using Rust = import "/rust.capnp";

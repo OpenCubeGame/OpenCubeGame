@@ -1,7 +1,36 @@
+# Common game data types exchanged over the wire.
 @0xa5e994c4ed48b34c;
 
 using Rust = import "/rust.capnp";
 $Rust.parentModule("schemas");
+
+struct Option @0x8ba1c86d2c77fb36 (T) {
+    union {
+        some @0 :T;
+        none @1 :Void;
+    }
+}
+
+struct Result @0x8f3f5259477b8021 (Ok, Err) {
+    union {
+        ok @0 :Ok;
+        err @1 :Err;
+    }
+}
+
+struct Version @0x838ff703b6e691c4 {
+    # SemVer: https://semver.org/
+    major @0 :UInt32;
+    minor @1 :UInt32;
+    patch @2 :UInt32;
+    prerelease @3 :Text;
+    build @4 :Text;
+}
+
+struct UUID @0xad396073ac7dea91 {
+    low @0 :UInt64;
+    high @1 :UInt64;
+}
 
 # Simple math types
 struct IVec2 @0x82293be591f48c52 {
@@ -57,4 +86,12 @@ struct RegistryIdMappingBundle @0xe1c96c086209943d {
     nss @0 :List(Text);
     keys @1 :List(Text);
     ids @2 :List(UInt32); # NonZero
+}
+
+# The bootstrap data package to set up all client-side data for the connection.
+struct GameBootstrapData @0xb0778941893c57e5 {
+    # Stable UUID of the server's universe, used for identifying unique server "savefiles".
+    universeId @0 :UUID;
+    # Name->ID mappings for the block registry.
+    blockRegistry @1 :RegistryIdMappingBundle;
 }
