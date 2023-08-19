@@ -3126,6 +3126,7 @@ dependencies = [
  "anyhow",
  "bevy",
  "ocg_schemas",
+ "thiserror",
 ]
 
 [[package]]

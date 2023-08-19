@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::voxel::chunk_storage::{ArrayStorage, PaletteStorage};
 use crate::voxel::voxeltypes::BlockEntry;
+use crate::OcgExtraData;
 
 /// RGB block light data (in a R5G5B5 format).
 #[repr(transparent)]
@@ -12,18 +13,18 @@ pub struct BlockLight(u16);
 
 /// A 32³ grid of voxel data
 #[derive(Clone, Eq, PartialEq)]
-pub struct Chunk<ExtraChunkData> {
+pub struct Chunk<ExtraData: OcgExtraData> {
     /// Block data
     pub blocks: PaletteStorage<BlockEntry>,
     /// Light data
     pub light_level: ArrayStorage<BlockLight>,
     /// Any extra per-chunk data needed by the API user
-    pub extra_data: ExtraChunkData,
+    pub extra_data: ExtraData::ChunkData,
 }
 
-impl<ECD> Chunk<ECD> {
+impl<ECD: OcgExtraData> Chunk<ECD> {
     /// Creates a new chunk filled with fill_block and the given extra data.
-    pub fn new(fill_block: BlockEntry, extra_data: ECD) -> Self {
+    pub fn new(fill_block: BlockEntry, extra_data: ECD::ChunkData) -> Self {
         Self {
             blocks: PaletteStorage::new(fill_block),
             light_level: ArrayStorage::default(),

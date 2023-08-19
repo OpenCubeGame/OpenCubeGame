@@ -15,6 +15,15 @@ use bevy::diagnostic::DiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::time::TimePlugin;
+use ocg_schemas::OcgExtraData;
+
+/// An [`OcgExtraData`] implementation containing server-side data for the game engine.
+pub struct ServerData;
+
+impl OcgExtraData for ServerData {
+    type ChunkData = ();
+    type GroupData = ();
+}
 
 /// A struct to communicate with the "server"-side engine that runs the game simulation.
 /// It has its own bevy App with a very limited set of plugins enabled to be able to run without a graphical user interface.

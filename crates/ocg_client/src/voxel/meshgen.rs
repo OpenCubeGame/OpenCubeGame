@@ -11,7 +11,8 @@ use ocg_schemas::voxel::neighborhood::ChunkRefNeighborhood;
 use ocg_schemas::voxel::standard_shapes::{StandardShapeMetadata, VOXEL_NO_SHAPE};
 use ocg_schemas::voxel::voxeltypes::{BlockEntry, BlockRegistry};
 
-use crate::voxel::{ClientChunk, ClientChunkData};
+use crate::voxel::ClientChunk;
+use crate::ClientData;
 
 /// Returns is a chunk has any blocks that require rendering a chunk mesh.
 pub fn does_chunk_need_rendering(chunk: &ClientChunk, registry: &BlockRegistry) -> bool {
@@ -28,13 +29,10 @@ const AO_OCCLUSION_FACTOR: f32 = 0.88;
 /// Creates a bevy mesh from a chunk, using neighboring chunks to determine culling&ambient occlusion information.
 #[allow(clippy::cognitive_complexity)]
 #[inline(never)]
-pub fn mesh_from_chunk(
-    registry: &BlockRegistry,
-    chunks: &ChunkRefNeighborhood<ClientChunkData>,
-) -> anyhow::Result<Mesh> {
+pub fn mesh_from_chunk(registry: &BlockRegistry, chunks: &ChunkRefNeighborhood<ClientData>) -> anyhow::Result<Mesh> {
     // position relative to the central chunk
     #[inline(always)]
-    fn get_block(chunks: &ChunkRefNeighborhood<ClientChunkData>, position: AbsBlockPos) -> BlockEntry {
+    fn get_block(chunks: &ChunkRefNeighborhood<ClientData>, position: AbsBlockPos) -> BlockEntry {
         let (chunk_pos, in_pos) = position.split_chunk_component();
         chunks.get(chunk_pos).unwrap().blocks.get_copy(in_pos)
     }

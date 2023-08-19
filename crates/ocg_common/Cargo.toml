@@ -14,3 +14,4 @@ ocg_schemas.workspace = true
 # Remote
 anyhow.workspace = true
 bevy.workspace = true
+thiserror.workspace = true
