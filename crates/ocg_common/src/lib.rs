@@ -3,6 +3,7 @@
 
 //! The common client&server code for OpenCubeGame
 
+pub mod network;
 pub mod voxel;
 
 use std::sync::atomic::AtomicBool;

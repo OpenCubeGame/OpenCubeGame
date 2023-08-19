@@ -15,7 +15,9 @@ ocg_common.workspace = true
 # Remote
 anyhow.workspace = true
 hashbrown.workspace = true
+quinn.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 
 [dependencies.bevy]
 workspace = true
