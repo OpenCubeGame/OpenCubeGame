@@ -14,6 +14,8 @@ ocg_schemas.workspace = true
 ocg_common.workspace = true
 # Remote
 anyhow.workspace = true
+hashbrown.workspace = true
+thiserror.workspace = true
 
 [dependencies.bevy]
 workspace = true

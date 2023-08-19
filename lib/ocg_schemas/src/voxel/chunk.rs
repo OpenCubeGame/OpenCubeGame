@@ -12,7 +12,7 @@ use crate::OcgExtraData;
 pub struct BlockLight(u16);
 
 /// A 32³ grid of voxel data
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Chunk<ExtraData: OcgExtraData> {
     /// Block data
     pub blocks: PaletteStorage<BlockEntry>,
@@ -22,9 +22,20 @@ pub struct Chunk<ExtraData: OcgExtraData> {
     pub extra_data: ExtraData::ChunkData,
 }
 
-impl<ECD: OcgExtraData> Chunk<ECD> {
+/// Manual clone implementation, because the auto-derived one puts an unnecessary bound on ExtraData.
+impl<ExtraData: OcgExtraData> Clone for Chunk<ExtraData> {
+    fn clone(&self) -> Self {
+        Self {
+            blocks: self.blocks.clone(),
+            light_level: self.light_level.clone(),
+            extra_data: self.extra_data.clone(),
+        }
+    }
+}
+
+impl<ExtraData: OcgExtraData> Chunk<ExtraData> {
     /// Creates a new chunk filled with fill_block and the given extra data.
-    pub fn new(fill_block: BlockEntry, extra_data: ECD::ChunkData) -> Self {
+    pub fn new(fill_block: BlockEntry, extra_data: ExtraData::ChunkData) -> Self {
         Self {
             blocks: PaletteStorage::new(fill_block),
             light_level: ArrayStorage::default(),

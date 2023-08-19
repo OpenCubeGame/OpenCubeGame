@@ -3115,8 +3115,10 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "bevy",
+ "hashbrown 0.14.0",
  "ocg_common",
  "ocg_schemas",
+ "thiserror",
 ]
 
 [[package]]
@@ -3125,6 +3127,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "bevy",
+ "hashbrown 0.14.0",
  "ocg_schemas",
  "thiserror",
 ]

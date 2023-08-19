@@ -31,9 +31,14 @@ impl<ED: OcgExtraData> ChunkGroup<ED> {
     where
         ED::GroupData: Default,
     {
+        Self::with_data(Default::default())
+    }
+
+    /// Constructs an empty chunk group with the given per-group data.
+    pub fn with_data(data: ED::GroupData) -> Self {
         Self {
             chunks: HashMap::default(),
-            extra_data: ED::GroupData::default(),
+            extra_data: data,
         }
     }
 

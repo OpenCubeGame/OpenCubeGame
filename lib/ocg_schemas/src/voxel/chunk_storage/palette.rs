@@ -125,6 +125,11 @@ impl<DataType: ChunkDataType + Copy> PaletteStorage<DataType> {
         self.iter().enumerate_xzy()
     }
 
+    /// Optimizes the internal storage by removing redundant data and shrinking the data array if possible.
+    pub fn optimize(&mut self) {
+        self.palette_gc(None);
+    }
+
     /// Garbage collect unused palette entries, compacting the chunk data.
     #[cold]
     fn palette_gc(&mut self, ignored_coord: Option<InChunkPos>) {
