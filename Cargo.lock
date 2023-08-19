@@ -3129,6 +3129,7 @@ dependencies = [
  "bevy",
  "hashbrown 0.14.0",
  "ocg_schemas",
+ "static_assertions",
  "thiserror",
 ]
 

@@ -15,4 +15,5 @@ ocg_schemas.workspace = true
 anyhow.workspace = true
 bevy.workspace = true
 hashbrown.workspace = true
+static_assertions.workspace = true
 thiserror.workspace = true

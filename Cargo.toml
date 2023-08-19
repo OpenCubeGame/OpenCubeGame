@@ -38,6 +38,7 @@ rand_pcg = "0.3.1"
 rgb = { version = "0.8.36", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
 smallvec = { version = "1.10.0", features = ["serde", "const_generics", "const_new", "write", "union"] }
+static_assertions = "1.1.0"
 thiserror = "1.0.40"
 
 # Remote, testing

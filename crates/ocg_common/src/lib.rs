@@ -7,15 +7,36 @@ pub mod voxel;
 
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
-use std::sync::mpsc::{sync_channel, Receiver};
+use std::sync::mpsc::{channel, sync_channel, Receiver, Sender};
 use std::sync::Arc;
 use std::thread::JoinHandle;
+use std::time::Duration;
 
+use bevy::app::AppExit;
 use bevy::diagnostic::DiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::time::TimePlugin;
+use bevy::utils::synccell::SyncCell;
 use ocg_schemas::OcgExtraData;
+
+/// Target (maximum) number of game simulation ticks in a second.
+pub const TICKS_PER_SECOND: i32 = 32;
+/// Target (maximum) number of game simulation ticks in a second, as a `f32`.
+pub const TICKS_PER_SECOND_F32: f32 = TICKS_PER_SECOND as f32;
+/// Target (maximum) number of game simulation ticks in a second, as a `f64`.
+pub const TICKS_PER_SECOND_F64: f64 = TICKS_PER_SECOND as f64;
+/// Target (minimum) number of seconds in a game simulation tick, as a `f32`.
+pub const SECONDS_PER_TICK_F32: f32 = 1.0f32 / TICKS_PER_SECOND as f32;
+/// Target (minimum) number of seconds in a game simulation tick, as a `f64`.
+pub const SECONDS_PER_TICK_F64: f64 = 1.0f64 / TICKS_PER_SECOND as f64;
+/// Target (minimum) number of microseconds in a game simulation tick, as a `i64`.
+pub const MICROSECONDS_PER_TICK: i64 = 1_000_000i64 / TICKS_PER_SECOND as i64;
+/// One game tick as a [`Duration`]
+pub const TICK: Duration = Duration::from_micros(MICROSECONDS_PER_TICK as u64);
+
+// Ensure `MICROSECONDS_PER_TICK` is perfectly accurate.
+static_assertions::const_assert_eq!(1_000_000i64 / MICROSECONDS_PER_TICK, TICKS_PER_SECOND as i64);
 
 /// An [`OcgExtraData`] implementation containing server-side data for the game engine.
 pub struct ServerData;
@@ -25,30 +46,52 @@ impl OcgExtraData for ServerData {
     type GroupData = ();
 }
 
+/// Control commands for the server, for in-process communication.
+pub enum GameServerControlCommand {
+    /// Gracefully shuts down the server.
+    Shutdown,
+}
+
 /// A struct to communicate with the "server"-side engine that runs the game simulation.
 /// It has its own bevy App with a very limited set of plugins enabled to be able to run without a graphical user interface.
-pub struct GameEngine {
+pub struct GameServer {
     thread: JoinHandle<()>,
     pause: AtomicBool,
 }
 
-impl GameEngine {
+/// A handle to a [`GameServer`] and its in-process control channel.
+pub struct GameServerHandle {
+    /// The spawned [`GameServer`] instance.
+    pub server: Arc<GameServer>,
+    /// The channel for sending [`GameServerControlCommand`] such as "Shutdown".
+    pub control_channel: Sender<GameServerControlCommand>,
+}
+
+#[derive(Resource)]
+struct GameServerControlCommandReceiver(SyncCell<Receiver<GameServerControlCommand>>);
+
+impl GameServer {
     /// Spawns a new thread that runs the engine in a paused state, and returns a handle to control it.
-    pub fn new() -> Arc<Self> {
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new() -> GameServerHandle {
         let (tx, rx) = sync_channel(1);
+        let (ctrl_tx, ctrl_rx) = channel();
         let thread = std::thread::Builder::new()
             .name("OCG Engine Thread".to_owned())
             .stack_size(8 * 1024 * 1024)
-            .spawn(move || GameEngine::thread_main(rx))
+            .spawn(move || GameServer::thread_main(rx, ctrl_rx))
             .expect("Could not create a thread for the engine");
-        let engine = Self {
+        let server = Self {
             thread,
             pause: AtomicBool::new(true),
         };
-        let engine = Arc::new(engine);
-        tx.send(Arc::clone(&engine))
+        let server = Arc::new(server);
+        tx.send(Arc::clone(&server))
             .expect("Could not pass initialization data to the engine thread");
-        engine
+        GameServerHandle {
+            server,
+            control_channel: ctrl_tx,
+        }
     }
 
     /// Checks if the game logic is paused.
@@ -66,7 +109,7 @@ impl GameEngine {
         !self.thread.is_finished()
     }
 
-    fn thread_main(engine: Receiver<Arc<GameEngine>>) {
+    fn thread_main(engine: Receiver<Arc<GameServer>>, ctrl_rx: Receiver<GameServerControlCommand>) {
         let _engine = {
             let e = engine
                 .recv()
@@ -85,6 +128,23 @@ impl GameEngine {
             .add_plugins(DiagnosticsPlugin)
             .add_plugins(AssetPlugin::default())
             .add_plugins(AnimationPlugin);
+        app.insert_resource(FixedTime::new(TICK));
+        app.insert_resource(GameServerControlCommandReceiver(SyncCell::new(ctrl_rx)));
+        app.add_systems(PostUpdate, Self::control_command_handler_system);
         app.run();
+    }
+
+    fn control_command_handler_system(
+        ctrl_rx: ResMut<GameServerControlCommandReceiver>,
+        mut exiter: EventWriter<AppExit>,
+    ) {
+        let ctrl_rx = ctrl_rx.into_inner().0.get();
+        for cmd in ctrl_rx.try_iter() {
+            match cmd {
+                GameServerControlCommand::Shutdown => {
+                    exiter.send(AppExit);
+                }
+            }
+        }
     }
 }
