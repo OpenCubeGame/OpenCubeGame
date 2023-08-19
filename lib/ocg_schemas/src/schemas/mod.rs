@@ -4,9 +4,19 @@
 //!  - Based on
 
 /// Common game object types
+#[allow(missing_docs)] // Auto-generated
 pub mod game_types_capnp {
     include!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/capnp-generated/game_types_capnp.rs"
+    ));
+}
+
+/// Voxel mesh encoding for resource bundles
+#[allow(missing_docs)] // Auto-generated
+pub mod voxel_mesh_capnp {
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/capnp-generated/voxel_mesh_capnp.rs"
     ));
 }
