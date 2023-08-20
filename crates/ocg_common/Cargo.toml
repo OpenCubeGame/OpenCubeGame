@@ -14,6 +14,7 @@ ocg_schemas.workspace = true
 # Remote
 anyhow.workspace = true
 bevy.workspace = true
+clap.workspace = true
 hashbrown.workspace = true
 quinn.workspace = true
 static_assertions.workspace = true
