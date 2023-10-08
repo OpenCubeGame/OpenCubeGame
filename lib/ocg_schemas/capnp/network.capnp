@@ -56,7 +56,7 @@ interface AuthenticatedClientConnection @0xddd4c8ca33d42019 {
 }
 
 # Client->Server RPC interface
-interface AuthenticatedServerConnection @0xcc65c2f3643e6ae0 extends (GameServer) {
+interface AuthenticatedServerConnection @0xcc65c2f3643e6ae0 {
     # Gets the data needed to bootstrap a server connection.
     bootstrapGameData @0 () -> (data: GameTypes.GameBootstrapData);
     # Sends a chat message to the server.

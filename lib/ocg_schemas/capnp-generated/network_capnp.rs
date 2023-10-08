@@ -3283,7 +3283,7 @@ pub mod authenticated_server_connection {
       self.client.new_call(_private::TYPE_ID, 1, ::core::option::Option::None)
     }
   }
-  pub trait Server<> : crate::schemas::network_capnp::game_server::Server  {
+  pub trait Server<>   {
     fn bootstrap_game_data(&mut self, _: BootstrapGameDataParams<>, _: BootstrapGameDataResults<>) -> ::capnp::capability::Promise<(), ::capnp::Error> { ::capnp::capability::Promise::err(::capnp::Error::unimplemented("method authenticated_server_connection::Server::bootstrap_game_data not implemented".to_string())) }
     fn send_chat_message(&mut self, _: SendChatMessageParams<>, _: SendChatMessageResults<>) -> ::capnp::capability::Promise<(), ::capnp::Error> { ::capnp::capability::Promise::err(::capnp::Error::unimplemented("method authenticated_server_connection::Server::send_chat_message not implemented".to_string())) }
   }
@@ -3307,7 +3307,6 @@ pub mod authenticated_server_connection {
     fn dispatch_call(&mut self, interface_id: u64, method_id: u16, params: ::capnp::capability::Params<::capnp::any_pointer::Owned>, results: ::capnp::capability::Results<::capnp::any_pointer::Owned>) -> ::capnp::capability::Promise<(), ::capnp::Error> {
       match interface_id {
         _private::TYPE_ID => Self::dispatch_call_internal(&mut self.server, method_id, params, results),
-        0xf0320743e0d6201d => crate::schemas::network_capnp::game_server::ServerDispatch::<_T>::dispatch_call_internal(&mut self.server, method_id, params, results),
         _ => { ::capnp::capability::Promise::err(::capnp::Error::unimplemented("Method not implemented.".to_string())) }
       }
     }
