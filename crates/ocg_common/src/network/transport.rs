@@ -1,6 +1,5 @@
 //! Network transport implementations - local message passing for singleplayer&unit tests and QUIC for multiplayer
 
-use std::future::Future;
 use std::sync::Arc;
 
 use capnp::message::ReaderOptions;
@@ -26,7 +25,7 @@ pub fn create_local_rpc_server(
     server: Arc<GameServer>,
     pipe: tokio::io::DuplexStream,
     id: PeerAddress,
-) -> impl Future<Output = Result<(), capnp::Error>> {
+) -> RpcSystem<Side> {
     let (read, write) = pipe.compat().split();
     let network = VatNetwork::new(read, write, Side::Server, RPC_LOCAL_READER_OPTIONS);
     let bootstrap_object = Server2ClientEndpoint::new(server, id);
@@ -38,7 +37,7 @@ pub fn create_local_rpc_server(
 pub fn create_local_rpc_client(
     pipe: tokio::io::DuplexStream,
     id: PeerAddress,
-) -> (impl Future<Output = Result<(), capnp::Error>>, Client2ServerConnection) {
+) -> (RpcSystem<Side>, Client2ServerConnection) {
     let (read, write) = pipe.compat().split();
     let network = VatNetwork::new(read, write, Side::Client, RPC_LOCAL_READER_OPTIONS);
     let mut rpc_system = RpcSystem::new(Box::new(network), None);
@@ -50,6 +49,7 @@ pub fn create_local_rpc_client(
 mod test {
     use crate::network::transport::*;
     use crate::network::PeerAddress;
+    use crate::GameServerControlCommand;
 
     #[test]
     fn test_server_metadata() {
@@ -63,10 +63,12 @@ mod test {
                         let addr = PeerAddress::Local(0);
                         let (cpipe, spipe) = tokio::io::duplex(1024 * 1024);
                         let server = GameServer::new();
-                        let _rpc_server =
-                            tokio::task::spawn_local(create_local_rpc_server(server.server.clone(), spipe, addr));
+                        let rpc_server = create_local_rpc_server(server.server.clone(), spipe, addr);
+                        let s_disconnector = rpc_server.get_disconnector();
+                        let rpc_server = tokio::task::spawn_local(rpc_server);
                         let (rpc_client, c_server) = create_local_rpc_client(cpipe, addr);
-                        let _rpc_client = tokio::task::spawn_local(rpc_client);
+                        let c_disconnector = rpc_client.get_disconnector();
+                        let rpc_client = tokio::task::spawn_local(rpc_client);
 
                         let mut ping_request = c_server.rpc().ping_request();
                         ping_request.get().set_input(123);
@@ -86,6 +88,13 @@ mod test {
                             "Metadata: {:?}",
                             metadata.get_metadata().expect("metadata nested get failed")
                         );
+
+                        // Disconnect the RPC endpoint, then await graceful shutdown.
+                        let _ = s_disconnector.await;
+                        let _ = c_disconnector.await;
+                        let _ = rpc_server.await;
+                        let _ = rpc_client.await;
+                        server.control_channel.send(GameServerControlCommand::Shutdown).unwrap();
                     })
                     .await;
             });
