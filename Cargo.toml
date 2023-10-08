@@ -29,6 +29,7 @@ capnp-rpc = "0.18.0"
 capnpc = "0.18.0"
 clap = { version = "4.3.19", features = ["derive"] }
 either = "1.8.1"
+futures = "0.3.28"
 glam = { version = "0.24.0", features = ["bytemuck", "serde"] }
 hashbrown = { version = "0.14", features = ["serde"] }
 itertools = "0.11.0"
@@ -43,6 +44,7 @@ smallvec = { version = "1.10.0", features = ["serde", "const_generics", "const_n
 static_assertions = "1.1.0"
 thiserror = "1.0.40"
 tokio = { version = "1.29.1", features = ["sync", "rt", "net", "rt-multi-thread", "io-util", "time"] }
+tokio-util = { version = "0.7.9", features = ["compat", "io-util"] }
 
 # Remote, testing
 criterion = { version = "0.5.1", features = ["html_reports"] }

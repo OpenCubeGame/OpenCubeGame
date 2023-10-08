@@ -2,8 +2,7 @@
 
 use std::sync::Arc;
 
-use capnp::message::HeapAllocator;
-use capnp_rpc::{pry, ImbuedMessageBuilder};
+use capnp_rpc::pry;
 use ocg_schemas::dependencies::capnp::capability::Promise;
 use ocg_schemas::dependencies::capnp::Error;
 use ocg_schemas::dependencies::kstring::KString;
@@ -15,21 +14,21 @@ use ocg_schemas::schemas::network_capnp::authenticated_server_connection::{
 use crate::network::PeerAddress;
 use crate::GameServer;
 
-/// An unauthenticated RPC client->server connection handler on the server side.
-pub struct Client2ServerEndpoint {
+/// An unauthenticated RPC client<->server connection handler on the server side.
+pub struct Server2ClientEndpoint {
     server: Arc<GameServer>,
     peer: PeerAddress,
 }
 
-/// An authenticated RPC client->server connection handler on the server side.
-pub struct AuthenticatedClient2ServerEndpoint {
+/// An authenticated RPC client<->server connection handler on the server side.
+pub struct AuthenticatedServer2ClientEndpoint {
     server: Arc<GameServer>,
     peer: PeerAddress,
     username: KString,
-    connection: ImbuedMessageBuilder<HeapAllocator>,
+    connection: rpc::authenticated_client_connection::Client,
 }
 
-impl Client2ServerEndpoint {
+impl Server2ClientEndpoint {
     /// Constructor.
     pub fn new(server: Arc<GameServer>, peer: PeerAddress) -> Self {
         Self { server, peer }
@@ -46,7 +45,7 @@ impl Client2ServerEndpoint {
     }
 }
 
-impl rpc::game_server::Server for Client2ServerEndpoint {
+impl rpc::game_server::Server for Server2ClientEndpoint {
     fn get_server_metadata(
         &mut self,
         _params: rpc::game_server::GetServerMetadataParams,
@@ -86,17 +85,16 @@ impl rpc::game_server::Server for Client2ServerEndpoint {
     ) -> Promise<(), Error> {
         let params = pry!(params.get());
         let username = KString::from_ref(pry!(pry!(params.get_username()).to_str()));
-        let connection: rpc::authenticated_client_connection::Client = pry!(params.get_connection());
+        let connection = pry!(params.get_connection());
 
         // TODO: validate username
 
-        let mut client = AuthenticatedClient2ServerEndpoint {
+        let client = AuthenticatedServer2ClientEndpoint {
             server: self.server.clone(),
             peer: self.peer,
             username,
-            connection: ImbuedMessageBuilder::new(HeapAllocator::new()),
+            connection,
         };
-        pry!(client.connection.set_root(connection));
 
         let mut result = results.get().init_conn();
         pry!(result.set_ok(capnp_rpc::new_client(client)));
@@ -105,16 +103,14 @@ impl rpc::game_server::Server for Client2ServerEndpoint {
     }
 }
 
-impl AuthenticatedClient2ServerEndpoint {
+impl AuthenticatedServer2ClientEndpoint {
     /// The RPC instance for sending messages to the connected client.
-    pub fn connection(&mut self) -> rpc::authenticated_client_connection::Client {
-        self.connection
-            .get_root::<rpc::authenticated_client_connection::Client>()
-            .expect("Invalid message type stored")
+    pub fn rpc(&self) -> &rpc::authenticated_client_connection::Client {
+        &self.connection
     }
 }
 
-impl rpc::authenticated_server_connection::Server for AuthenticatedClient2ServerEndpoint {
+impl rpc::authenticated_server_connection::Server for AuthenticatedServer2ClientEndpoint {
     fn bootstrap_game_data(&mut self, _: BootstrapGameDataParams, _: BootstrapGameDataResults) -> Promise<(), Error> {
         todo!()
     }
