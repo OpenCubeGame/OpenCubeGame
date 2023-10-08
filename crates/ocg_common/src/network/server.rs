@@ -85,7 +85,7 @@ impl rpc::game_server::Server for Client2ServerEndpoint {
         mut results: rpc::game_server::AuthenticateResults,
     ) -> Promise<(), Error> {
         let params = pry!(params.get());
-        let username = KString::from_ref(pry!(params.get_username()));
+        let username = KString::from_ref(pry!(pry!(params.get_username()).to_str()));
         let connection: rpc::authenticated_client_connection::Client = pry!(params.get_connection());
 
         // TODO: validate username
