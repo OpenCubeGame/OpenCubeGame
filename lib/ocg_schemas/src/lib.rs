@@ -5,6 +5,7 @@
 
 pub mod coordinates;
 pub mod direction;
+pub mod item;
 pub mod physics;
 pub mod range;
 pub mod registry;
